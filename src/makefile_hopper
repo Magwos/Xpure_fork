@@ -1,0 +1,66 @@
+################################################################################################
+# Makefile to compile SCALAR2SPIN@HOPPER and XPURE@HOPPER. 
+# You need to have the module cmb installed by HPCPorts:
+# >source /project/projectdirs/cmb/modules/hopper/hpcports.sh
+# >hpcports gnu
+# >module load hpcp
+# >module load cmb
+# Ju@APC 06.04.2014
+# Comments: julien.peloton@apc.univ-paris7.fr
+################################################################################################
+
+################################################################################################
+HEALPIX=/project/projectdirs/cmb/modules/hopper/gnu/cmb/2.5.1/healpix_2.15a-2.5.1/
+S2HAT= /global/
+#CFITSIO=/project/projectdirs/cmb/modules/hopper/gnu/cmb/2.5.1/cfitsio_3.25-2.5.1/
+CFITSIO=/usr/common/usg/cfitsio/3.370/gnu
+SPRNG=/project/projectdirs/cmb/modules/hopper/gnu/cmb/2.5.1/sprng_2.0-2.5.1/
+
+
+INC_DIR = -I${S2HAT}/u2/r/radek/s2hat/include/hopper/gnu/acml -I${HEALPIX}/include -I${CFITSIO}/include -I${SPRNG}/include -I/usr/common/usg/acml/5.2.0/gfortran64/include
+LIB_DIR = -L${HEALPIX}/lib -L${S2HAT}/homes/r/radek/s2hat/lib/hopper/v2.55/gnu -L${CFITSIO}/lib -L${SPRNG}/lib -L/usr/common/usg/acml/5.2.0/gfortran64/lib
+LIB = -ls2hat_acml -lacml $(shell cmbconfig --libs healpix chealpix cfitsio) -lm -lsprng 
+
+CC  = $(shell cmbconfig --comp --lang C)
+LL  = ftn -std=gnu
+F77 = $(shell cmbconfig --comp --lang F90) -std=gnu
+
+FLAG  = -DDEBUG $(shell cmbconfig --cflags --lang C healpix healpix cfitsio) -DACML -DFITS -DHEALPIXDATA=\"${HEALPIX}/share/healpix/\"
+FFLAG = -DDEBUG $(shell cmbconfig --cflags --lang F90 healpix healpix cfitsio)
+LFLAG = -DDEBUG $(shell cmbconfig --lflags --lang F90 healpix healpix cfitsio)
+################################################################################################
+
+
+
+OBJFILE = wig3j_f.o xpure_tools.o xpure_io.o compute_all_xls.o s2hat_map2purealm.o
+
+all :
+		gmake scalar2spin xpure xpure_create_mll
+		mkdir -p ../build/hopper
+		mv scalar2spin ../build/hopper
+		mv xpure xpure_create_mll ../build/hopper
+		chgrp -R mp107 ../
+		chmod -R g+rwX ../
+
+obj :
+		gmake ${OBJFILE}
+
+clean :
+		rm -f ${OBJFILE} *.o
+
+%.o: %.c
+		${CC} ${FLAG} ${INC_DIR} -c -o $@ $<
+
+wig3j_f.o: wig3j_f.f
+		${F77} ${FFLAG} -c wig3j_f.f
+
+scalar2spin: ${OBJFILE} scalar2spin.o
+		${LL} ${LFLAG} ${OBJFILE} scalar2spin.o ${LIB_DIR} ${LIB} -o scalar2spin
+
+xpure: ${OBJFILE} xpure.o
+		${CC} ${LFLAG} ${OBJFILE} xpure.o ${LIB_DIR} ${LIB} -o xpure
+
+xpure_create_mll: ${OBJFILE} xpure_create_mll.o
+		${CC} ${LFLAG} ${OBJFILE} xpure_create_mll.o ${LIB_DIR} ${LIB} -o xpure_create_mll
+
+s2hat_pure: ./s2hat_pure.h

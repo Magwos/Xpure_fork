@@ -1,0 +1,227 @@
+#!/bin/bash
+#PBS -q debug
+#PBS -l mppwidth=64
+#PBS -l walltime=00:30:00
+#PBS -j eo
+#PBS -N x2pure_test
+#PBS -A mp107
+
+#ENVIRONEMENT
+BINDIR=${HOME}/mapmaker/xpure/trunk2
+OUTPUT=${SCRATCH2}/XPURE_workspace/full_cl_cutsky
+MASKDIR=${HOME}/mapmaker/INPUT/NATHAN/APODIZED
+MAPDIR=${HOME}/mapmaker/INPUT/NATHAN/APODIZED
+THEORYDIR=${HOME}/mapmaker/INPUT/THEORY
+
+#NHITDIR=${HOME}/X2PURE/INPUT/MASK/15x15_smooth
+#INPUT=${HOME}/X2PURE/INPUT/THEORY
+#OUTPUT=${HOME}/X2PURE/SIMU/OUTPUT_15x15_smooth_60
+mkdir ${OUTPUT}
+cd ${OUTPUT}
+
+NSIMU=10
+NMASK=1
+
+
+#########################################################################################
+#CREATE PARAMETER FILE
+cat > createMll.par << EOF
+
+######### MODE #############
+# 0 : Standard formalism
+# 1 : Pure formalism
+# 2 : Hybrid formalism
+############################
+mode = 0 
+
+############ SETUP #########
+nside = 1024
+lmax = 3071
+nmask = $NMASK
+
+EOF
+
+
+for(( i=1; i<=$NMASK; i++)); do
+    cat >> createMll.par << EOF
+#maskfile${i}_T  = ${MASKDIR}/ap60_binary_nathan100_nside1024.fits
+maskfile${i}_T  = ${MASKDIR}/ap60_I_weight_nathan100_nside1024.fits
+
+#maskfile${i}_E_spin0 = ${MASKDIR}/w_std_30arcmin.fits
+
+#maskfile${i}_E_spin0 = ${MASKDIR}/ap60_binary_nathan100_nside1024.fits
+maskfile${i}_E_spin0 = ${MASKDIR}/ap60_I_weight_nathan100_nside1024.fits
+#maskfile${i}_E_spin1 = ${MASKDIR}/w15_spin1_ana${i}.fits
+#maskfile${i}_E_spin2 = ${MASKDIR}/w15_spin2_ana${i}.fits
+
+
+#maskfile${i}_B_spin0 = ${MASKDIR}/w.fits
+
+#maskfile${i}_B_spin0 = ${MASKDIR}/ap60_binary_nathan100_nside1024.fits
+maskfile${i}_B_spin0 = ${MASKDIR}/ap60_I_weight_nathan100_nside1024.fits
+#maskfile${i}_B_spin1 = ${MASKDIR}/w15_spin1_ana${i}.fits
+#maskfile${i}_B_spin2 = ${MASKDIR}/w15_spin2_ana${i}.fits 
+
+
+mllfile_TT_TT_${i} = ${OUTPUT}/mll_TT_TT_BinMask${i}.fits
+
+mllfile_EE_EE_${i} = ${OUTPUT}/mll_spinEE_EE_pcg${i}.fits
+mllfile_EE_BB_${i} = ${OUTPUT}/mll_spinEE_BB_pcg${i}.fits
+mllfile_EE_EB_${i} = ${OUTPUT}/mll_spinEE_EB_pcg${i}.fits
+mllfile_BB_BB_${i} = ${OUTPUT}/mll_spinBB_BB_pcg${i}.fits
+mllfile_BB_EE_${i} = ${OUTPUT}/mll_spinBB_EE_pcg${i}.fits
+mllfile_BB_EB_${i} = ${OUTPUT}/mll_spinBB_EB_pcg${i}.fits
+
+mllfile_TE_TE_${i} = ${OUTPUT}/mll_spinTE_TE_pcg${i}.fits
+mllfile_TE_TB_${i} = ${OUTPUT}/mll_spinTE_TB_pcg${i}.fits
+mllfile_TB_TE_${i} = ${OUTPUT}/mll_spinTB_TE_pcg${i}.fits
+mllfile_TB_TB_${i} = ${OUTPUT}/mll_spinTB_TB_pcg${i}.fits
+
+mllfile_EB_EB_${i} = ${OUTPUT}/mll_spinEB_EB_pcg${i}.fits
+mllfile_EB_EE_${i} = ${OUTPUT}/mll_spinEB_EE_pcg${i}.fits
+mllfile_EB_BB_${i} = ${OUTPUT}/mll_spinEB_BB_pcg${i}.fits
+EOF
+
+done
+
+aprun -n 64 ${BINDIR}/x2pure_create_mll createMll.par
+rm -f createMll.par
+
+
+
+
+#########################################################################################
+for (( n=0; n<$NSIMU; n++ )); do
+
+    echo "************************ simu $n ************************"
+
+    num=$n
+
+    #CREATE PARAMETER FILE
+    cat > xpure.par << _EOF_
+
+mode = 0
+
+nside = 1024
+nmaps = 1
+nmasks = $NMASK
+
+bellfile1 = ${THEORYDIR}/bell4000_35.fits
+#bellfile2 = ${INPUT}/bell_8arcmin.fits
+
+sigmaT1 = 0.
+#sigmaT1 = 10042.
+#sigmaT2 = 1.68
+sigmaP1 = 0.
+#sigmaP1 = 10042.
+#sigmaP2 = 1.68
+
+#nhitfileT = ${NHITDIR}/nhits_1024_15x15_smooth.fits
+#nhitfileP = ${NHITDIR}/nhits_1024_15x15_smooth.fits
+
+#mapfile1 = ${INPUT}/map_delta.fits
+#inpCellfile = ${THEORYDIR}/cl_dirac_1000.fits
+inpCellfile = ${THEORYDIR}/cl_WMAP-5yr_r0.05_lens.fits
+inpBellfile = ${THEORYDIR}/bell4000_35.fits
+lmaxSim = 3071
+
+_EOF_
+
+    for(( i=1; i<=$NMASK; i++)); do
+	cat >> xpure.par << EOF
+
+mllfile_TT_TT_${i} = ${OUTPUT}/mll_TT_TT_BinMask${i}.fits
+
+mllfile_EE_EE_${i} = ${OUTPUT}/mll_spinEE_EE_pcg${i}.fits
+mllfile_EE_BB_${i} = ${OUTPUT}/mll_spinEE_BB_pcg${i}.fits
+mllfile_EE_EB_${i} = ${OUTPUT}/mll_spinEE_EB_pcg${i}.fits
+mllfile_BB_BB_${i} = ${OUTPUT}/mll_spinBB_BB_pcg${i}.fits 
+mllfile_BB_EE_${i} = ${OUTPUT}/mll_spinBB_EE_pcg${i}.fits
+mllfile_BB_EB_${i} = ${OUTPUT}/mll_spinBB_EB_pcg${i}.fits
+
+mllfile_TE_TE_${i} = ${OUTPUT}/mll_spinTE_TE_pcg${i}.fits
+mllfile_TE_TB_${i} = ${OUTPUT}/mll_spinTE_TB_pcg${i}.fits
+mllfile_TB_TE_${i} = ${OUTPUT}/mll_spinTB_TE_pcg${i}.fits 
+mllfile_TB_TB_${i} = ${OUTPUT}/mll_spinTB_TB_pcg${i}.fits
+
+mllfile_EB_EB_${i} = ${OUTPUT}/mll_spinEB_EB_pcg${i}.fits
+mllfile_EB_EE_${i} = ${OUTPUT}/mll_spinEB_EE_pcg${i}.fits 
+mllfile_EB_BB_${i} = ${OUTPUT}/mll_spinEB_BB_pcg${i}.fits 
+
+
+#maskfile${i}_T  = ${MASKDIR}/ap60_binary_nathan100_nside1024.fits
+maskfile${i}_T  = ${MASKDIR}/ap60_I_weight_nathan100_nside1024.fits
+
+#maskfile${i}_E_spin0 = ${MASKDIR}/w_std_30arcmin.fits
+
+#maskfile${i}_E_spin0 = ${MASKDIR}/ap60_binary_nathan100_nside1024.fits
+maskfile${i}_E_spin0 = ${MASKDIR}/ap60_I_weight_nathan100_nside1024.fits
+#maskfile${i}_E_spin1 = ${MASKDIR}/w15_spin1_ana${i}.fits
+#maskfile${i}_E_spin2 = ${MASKDIR}/w15_spin2_ana${i}.fits
+
+
+#maskfile${i}_B_spin0 = ${MASKDIR}/w_std_30arcmin.fits
+
+#maskfile${i}_B_spin0 = ${MASKDIR}/ap60_binary_nathan100_nside1024.fits
+maskfile${i}_B_spin0 = ${MASKDIR}/ap60_I_weight_nathan100_nside1024.fits
+#maskfile${i}_B_spin1 = ${MASKDIR}/w15_spin1_ana${i}.fits
+#maskfile${i}_B_spin2 = ${MASKDIR}/w15_spin2_ana${i}.fits
+ 
+EOF
+    done
+
+    cat >> xpure.par << _EOF_
+noise_biasT_1 = 0.
+#noise_biasT_1 = 10042.
+#noise_biasT_2_2 = 1.68
+#noise_biasT_1_2 = 0.
+
+noise_biasP_1 = 0.
+#noise_biasP_1 = 10042.
+#noise_biasP_2_2 = 1.68
+#noise_biasP_1_2 = 0.
+
+#bintab = ${THEORYDIR}/bintab_unbinned_3071.fits
+bintab = ${THEORYDIR}/bintab_200_lmax4000.fits
+#mask_list = ${INPUT}/bin2mask_43bins.fits
+pseudofile = ${OUTPUT}/pseudopure_pcg_$num
+cellfile = ${OUTPUT}/cellpure_pbear_$num
+
+lmax = 3071
+
+_EOF_
+
+    #RUN
+    time aprun -n 64 ${BINDIR}/x2pure xpure.par
+    rm -f xpure.par
+
+done
+
+#remove mixing kernels if more than 1 mask
+for(( i=1; i<=$NMASK; i++)); do
+#    rm -f ${OUTPUT}/mll_TT_TT_BinMask${i}.fits 
+
+#    rm -f ${OUTPUT}/mll_spinEE_EE_pcg${i}.fits
+#    rm -f ${OUTPUT}/mll_spinEE_BB_pcg${i}.fits
+    rm -f ${OUTPUT}/mll_spinEE_EB_pcg${i}.fits
+    rm -f ${OUTPUT}/mll_spinBB_BB_pcg${i}.fits
+    rm -f ${OUTPUT}/mll_spinBB_EE_pcg${i}.fits
+    rm -f ${OUTPUT}/mll_spinBB_EB_pcg${i}.fits
+
+    rm -f ${OUTPUT}/mll_spinTE_TE_pcg${i}.fits
+    rm -f ${OUTPUT}/mll_spinTE_TB_pcg${i}.fits
+    rm -f ${OUTPUT}/mll_spinTB_TE_pcg${i}.fits
+    rm -f ${OUTPUT}/mll_spinTB_TB_pcg${i}.fits
+
+    rm -f ${OUTPUT}/mll_spinEB_BB_pcg${i}.fits
+    rm -f ${OUTPUT}/mll_spinEB_EE_pcg${i}.fits
+    rm -f ${OUTPUT}/mll_spinEB_EB_pcg${i}.fits
+done
+
+#tar
+#cd ..
+#tar zcf OUTPUT_PBEAR_15x15_smooth_60.tar.gz OUTPUT_15x15_smooth_60/
+#rm -rf ${OUTPUT}
+#mv OUTPUT_PBEAR_15x15_smooth_60.tar.gz ${HOME}/ANALYSIS
+
+

@@ -1,0 +1,56 @@
+################################################################################################
+# Makefile to compile XPURE on Magique3
+################################################################################################
+
+################################################################################################
+HEALPIX = /softs/Healpix/2.11c-ifort-11.0-gcc-4.3.3/
+S2HAT = /wrk/tristram/LiteBird/s2hat
+CFITSIO=/softs/cfitsio/3.24/
+SPRNG= /wrk/tristram/LiteBird/sprng2.0/
+MKLDIR = /softs/intel/mkl/10.1
+NAGDIR = /softs/nag/nagC/cll6a08dgl
+
+INC_DIR = -I${S2HAT} -I${HEALPIX}include -I${CFITSIO}include -I${SPRNG}/include -I${MKLDIR}/include -I${NAGDIR}/include
+LIB_DIR = -L${HEALPIX}lib -L${S2HAT} -L${CFITSIO}lib -L${SPRNG}/lib -L${MKLDIR}/lib/em64t
+LIB = -Wl,-R/softs/intel/fce/11.1/lib/intel64 -L/softs/intel/fce/11.1/lib/intel64 -lifcore -lintlc -lifport -limf -lirc -ldl -lsvml -Wl,-R${NAGDIR}/lib -L${NAGDIR}/lib -lnagc_nag -Wl,-R${NAGDIR}/acml_64 -L${NAGDIR}/acml_64 -lacml -fopenmp /softs/Healpix/2.11c-ifort-11.0-gcc-4.3.3/lib/libchealpix.a -lmpi_f77 -ls2hat -lhealpix -lgif /softs/cfitsio/3.24/lib/libcfitsio.a -lg2c -lsprng  -lm
+#LIB = -Wl,-R/softs/intel/fce/11.1/lib/intel64 -L/softs/intel/fce/11.1/lib/intel64 -lifcore -lintlc -lifport -limf -lirc -ldl -lsvml -Wl,-R${MKLDIR}/lib/em64t -lmkl -lmkl_lapack -lmkl_def -lmkl_core -liomp5 -lpthread -fopenmp /softs/Healpix/2.11c-ifort-11.0-gcc-4.3.3/lib/libchealpix.a -lmpi_f77 -ls2hat -lhealpix -lgif /softs/cfitsio/3.24/lib/libcfitsio.a -lsprng  -lm
+
+CC  = mpicc
+LL  = mpicc 
+F77 = mpif77
+
+FLAG  = -O3 -fPIC -DCNAG -DFITS -DHEALPIXDATA=\"${HEALPIX}/data/\"
+#FLAG  = -O3 -fPIC -DMKL -DFITS -DHEALPIXDATA=\"${HEALPIX}/data/\"
+FFLAG = -O3 -fpp -fPIC
+LFLAG = -O3
+
+################################################################################################
+
+
+
+OBJFILE = wig3j_f.o xpure_tools.o xpure_io.o compute_all_xls.o
+
+all :
+		gmake -f ${MAKEFILE_LIST} scalar2spin xpure xpure_create_mll
+
+obj :
+		gmake -f ${MAKEFILE_LIST} ${OBJFILE}
+
+clean :
+		rm -f *.o scalar2spin xpure xpure_create_mll
+
+%.o: %.c
+		${CC} ${FLAG} ${INC_DIR} -c -o $@ $<
+
+wig3j_f.o: wig3j_f.f
+		${F77} ${FFLAG} -c wig3j_f.f
+scalar2spin: ${OBJFILE} scalar2spin.o
+		${LL} ${LFLAG} ${OBJFILE} scalar2spin.o ${LIB_DIR} ${LIB} -o scalar2spin
+
+xpure: ${OBJFILE} xpure.o
+		${CC} ${LFLAG} ${OBJFILE} xpure.o ${LIB_DIR} ${LIB} -o xpure
+
+xpure_create_mll: ${OBJFILE} xpure_create_mll.o
+		${CC} ${LFLAG} ${OBJFILE} xpure_create_mll.o ${LIB_DIR} ${LIB} -o xpure_create_mll
+
+s2hat_pure: ./s2hat_pure.h

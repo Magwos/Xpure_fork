@@ -1,0 +1,66 @@
+################################################################################################
+# Makefile to compile SCALAR2SPIN@SISSA-ULYSSES and X2PURE@SISSA-ULYSSES. 
+# You need the cmb set of routines and packaged that can be sourced in 
+# your .bashrc file adding:
+# source /scratch/giuspugl/soft/script.sh
+# GiulioFabbian@SISSA 22.10.2015
+# Comments: gfabbian@sissa.it
+################################################################################################
+
+################################################################################################
+HEALPIX=/scratch/giuspugl/soft/Healpix_3.20
+#HEALPIX=/home/gfabbian/software/Healpix_3.20
+S2HAT= /home/gfabbian/software/s2hat_v2.55_beta/
+CFITSIO=/scratch/giuspugl/soft/cfitsio
+SPRNG=/home/gfabbian/software/sprng2.0
+
+
+INC_DIR = -I${S2HAT}/include/ -I${HEALPIX}/include -I${CFITSIO}/include -I${SPRNG}/include
+LIB_DIR = -L${HEALPIX}/lib/ -L${S2HAT}/lib -L${CFITSIO}/lib -L${SPRNG}/lib/intel15
+LIB = -ls2hat_std -lchealpix  -lsprng -lcfitsio -lifcore -lm -mkl
+
+CC  = mpicc -g -O3
+#$(shell cmbconfig --comp --lang C)
+LL  = mpif90 -lifcore -nofor_main -std=gnu
+F77 = mpif90 
+#$(shell cmbconfig --comp --lang F90) -std=gnu
+
+FLAG  = -DDEBUG  -DACML -DFITS -DHEALPIXDATA=\"${HEALPIX}/share/healpix/\"
+FFLAG = -DDEBUG 
+LFLAG = -DDEBUG 
+################################################################################################
+
+
+
+OBJFILE = wig3j_f.o xpure_tools.o xpure_io.o compute_all_xls.o s2hat_map2purealm.o
+
+all :
+		gmake scalar2spin xpure xpure_create_mll
+		mkdir -p ../build/ulysses
+		mv scalar2spin ../build/ulysses
+		mv xpure xpure_create_mll ../build/ulysses
+		chgrp -R ap ../build
+		chmod -R g+rX ../build
+
+obj :
+		gmake ${OBJFILE}
+
+clean :
+		rm -f ${OBJFILE} *.o
+
+%.o: %.c
+		${CC} ${FLAG} ${INC_DIR} -c -o $@ $<
+
+wig3j_f.o: wig3j_f.f
+		${F77} ${FFLAG} -c wig3j_f.f
+
+scalar2spin: ${OBJFILE} scalar2spin.o
+		${LL} ${LFLAG} ${OBJFILE} scalar2spin.o ${LIB_DIR} ${LIB} -o scalar2spin
+
+xpure: ${OBJFILE} xpure.o
+		${CC} ${LFLAG} ${OBJFILE} xpure.o ${LIB_DIR} ${LIB} -o xpure
+
+xpure_create_mll: ${OBJFILE} xpure_create_mll.o
+		${CC} ${LFLAG} ${OBJFILE} xpure_create_mll.o ${LIB_DIR} ${LIB} -o xpure_create_mll
+
+s2hat_pure: ./s2hat_pure.h
