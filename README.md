@@ -36,7 +36,27 @@ Prerequisites
 Installing
 ----------
 
-Run the following commands:
+With **CMAKE**, you can install Xpure using the following commands :
+
+
+```
+cmake -S . -B build --install-prefix <path>
+cmake --build build
+cmake --install build
+```
+
+or
+
+```
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=<prefix>
+cmake --build build
+cmake --install build
+```
+
+having exported in your environment the paths to s2hat and healpix if needed
+
+
+Or, you can as well run the following commands for the configure :
 
 * CC=mpicc ./waf configure --s2hat=${PATH_S2HAT} --healpix=${PATH_HEALPIX}
 * CC=mpicc ./waf build

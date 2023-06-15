@@ -399,11 +399,12 @@ double SolveSystem( int nele, double *init_mat, double *cell)
 
 //=========================================================================
 // Compute BinShift and nbin_per_mask when combining masks
-void BinShifts( int nbins, char* mask_list, int *binshift, int *nbin_per_mask)
+void BinShifts( int nbins, char* mask_list, int *binshift, int *nbin_per_mask, int rank)
 {
   int b, bshift=-1;
   double *bin2mask = NULL;
 
+  int root = 0;
   //read mask_list
   bin2mask = (double *) malloc( nbins * sizeof( double));
   read_fits_vect( mask_list, bin2mask, nbins, 1, 0);
@@ -429,6 +430,10 @@ void GatherCell( int nbins, int bshift, int nbin_per_mask, double *cell, MPI_Com
   int b;
   double *final_cell;
 
+  int root=0, rank;
+  MPI_Comm_rank( root_comm, &rank);
+  
+
   if( rank == root)
     final_cell = (double *) calloc( nbins, sizeof(double));
 
@@ -452,6 +457,9 @@ void GatherMll( int nbins, int bshift, int nbin_per_mask, double *mbb, MPI_Comm 
   double *final_mbb;
   int nele = nbins*nbins;
 
+  int root=0, rank;
+  MPI_Comm_rank( root_comm, &rank);
+  
   if( rank == root)
     final_mbb = (double *) calloc( nele, sizeof(double));
 

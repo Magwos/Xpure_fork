@@ -59,9 +59,9 @@
 #ifndef SQR
 #define SQR(a) ((a)*(a))
 #endif
-int fullsky;
-int rank;
-int root, gangroot;
+// int fullsky;
+// int rank;
+// int root, gangroot;
 
 
 #define HEAL_UNDEF(a) ( fabs(a-UNDEF_HEALPIX_VALUE) < 1e-5*fabs(UNDEF_HEALPIX_VALUE) )
@@ -86,7 +86,7 @@ void PCl( int nele, int nbin, double *matp, double *pseudocl, double *pseudocb);
 void PMQ( int nbin, int nele, double *P, double *V, double *Q, double *M);
 double SolveSystem( int nele, double *mat, double *cell);
 
-void BinShifts( int nbins, char* mask_list, int *binshift, int *nbin_per_mask);
+void BinShifts( int nbins, char* mask_list, int *binshift, int *nbin_per_mask, int rank);
 void GatherCell( int nbins, int bshift, int npm, double *cell, MPI_Comm root_comm);
 void GatherMll( int nbins, int bshift, int npm, double *mbb, MPI_Comm root_comm);
 

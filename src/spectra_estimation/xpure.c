@@ -1,7 +1,7 @@
 //#include "xpol_s2hat.h"
 #include "xpure.h"
 #include "s2hat_pure.h"
-#include "sprng.h"
+// #include "sprng.h"
 #include <fitsio.h>
 
 #include <time.h>
@@ -18,8 +18,8 @@ void PrintHelp();
 void write_fits_pseudo( int nele, double *vect, char *outfile, int col);
 void write_fits_pure( int nele, double *vect, char *outfile, int col);
 void read_fits_puremll( char *infile, int nele, double *mll);
-int get_random_alms( int*, int, double*, int, int, int*, s2hat_dcomplex*);
-void sprng_gaussran( int*, int, double*);
+// int get_random_alms( int*, int, double*, int, int, int*, s2hat_dcomplex*);
+// void sprng_gaussran( int*, int, double*);
 void apply_mask( int nmaps, int map_size, int ncomp,
 		 double *local_map, double *local_mask, double *local_apodizedmap);
 void apply_maskTT( int nmaps, int map_size,
@@ -33,8 +33,8 @@ void apply_maskTT( int nmaps, int map_size,
 int main(int argc, char * argv[])
 {
   int nprocs, l, b, m;
-  root=0;
-  gangroot=0;
+  int root=0;
+  int gangroot=0;
 
   /* Parameters */
   int i, j;
@@ -65,6 +65,8 @@ int main(int argc, char * argv[])
   MPI_Comm gang_comm;
   MPI_Comm root_comm;
   int nmasks, ngangs, gangsize, gangnmaps, gangnum, gangrank;
+
+  int rank;
 
   MPI_Init( &argc, &argv);
   MPI_Comm_rank( MPI_COMM_WORLD, &rank);
@@ -335,7 +337,7 @@ int main(int argc, char * argv[])
   if( combine_masks) {
     binshift      = (int *) calloc( nmasks, sizeof(int));
     nbin_per_mask = (int *) calloc( nmasks, sizeof(int));
-    BinShifts( nbins, mask_list, binshift, nbin_per_mask);
+    BinShifts( nbins, mask_list, binshift, nbin_per_mask, rank);
 
     if( rank==root) for( b=0; b<nmasks; b++) printf( "mask:%d  binshift=%d  nbin=%d\n", b, binshift[b], nbin_per_mask[b]);
   }
@@ -559,7 +561,8 @@ int main(int argc, char * argv[])
   double *local_noise, *inputPS, *inputT, *inputG, *inputC, *inputTG, *inputTC, *inputGC, *inputBl;
   s2hat_dcomplex *local_simu_almT, *local_simu_almP;
   int *cmb_random_streamT, *cmb_random_streamP, *noise_random_streamT, *noise_random_streamP;
-  int iseed = 985456376, sprng_type=SPRNG_LFG;
+  int iseed = 985456376;
+  // int sprng_type=SPRNG_LFG;
   int nstreamsPerProc, nstreams;
   int cmb_random_streamT_no, cmb_random_streamP_no, noise_random_streamT_no, noise_random_streamP_no;
 
@@ -567,213 +570,213 @@ int main(int argc, char * argv[])
   local_mapT = (double *) calloc( ncomp*gangnmaps*map_size, sizeof(double));
 
   /* initialize the random number generator */ 
-  nstreamsPerProc = 0;
-  if( cmbFromCl) nstreamsPerProc += 2;
-  if(  is_noise) nstreamsPerProc += 2;
-  nstreams = gangsize*nstreamsPerProc; /* total number of independant stream */
-  cmb_random_streamT_no   = gangrank*nstreamsPerProc;
-  cmb_random_streamP_no   = gangrank*nstreamsPerProc + 1;
-  noise_random_streamT_no = gangrank*nstreamsPerProc + nstreamsPerProc-2;
-  noise_random_streamP_no = gangrank*nstreamsPerProc + nstreamsPerProc-1;
+  // nstreamsPerProc = 0;
+  // if( cmbFromCl) nstreamsPerProc += 2;
+  // if(  is_noise) nstreamsPerProc += 2;
+  // nstreams = gangsize*nstreamsPerProc; /* total number of independant stream */
+  // cmb_random_streamT_no   = gangrank*nstreamsPerProc;
+  // cmb_random_streamP_no   = gangrank*nstreamsPerProc + 1;
+  // noise_random_streamT_no = gangrank*nstreamsPerProc + nstreamsPerProc-2;
+  // noise_random_streamP_no = gangrank*nstreamsPerProc + nstreamsPerProc-1;
 
-  if( rank == root) iseed = make_sprng_seed();
+  // if( rank == root) iseed = make_sprng_seed();
   MPI_Bcast( &iseed, 1, MPI_INT, root, MPI_COMM_WORLD);
   
-  if( cmbFromCl) cmb_random_streamT   = init_sprng( sprng_type, cmb_random_streamT_no,   nstreams, iseed, SPRNG_DEFAULT);
-  if( cmbFromCl) cmb_random_streamP   = init_sprng( sprng_type, cmb_random_streamP_no,   nstreams, iseed, SPRNG_DEFAULT);
-  if(  is_noise) noise_random_streamT = init_sprng( sprng_type, noise_random_streamT_no, nstreams, iseed, SPRNG_DEFAULT);
-  if(  is_noise) noise_random_streamP = init_sprng( sprng_type, noise_random_streamP_no, nstreams, iseed, SPRNG_DEFAULT);
+//   if( cmbFromCl) cmb_random_streamT   = init_sprng( sprng_type, cmb_random_streamT_no,   nstreams, iseed, SPRNG_DEFAULT);
+//   if( cmbFromCl) cmb_random_streamP   = init_sprng( sprng_type, cmb_random_streamP_no,   nstreams, iseed, SPRNG_DEFAULT);
+//   if(  is_noise) noise_random_streamT = init_sprng( sprng_type, noise_random_streamT_no, nstreams, iseed, SPRNG_DEFAULT);
+//   if(  is_noise) noise_random_streamP = init_sprng( sprng_type, noise_random_streamP_no, nstreams, iseed, SPRNG_DEFAULT);
 
-#if TESTOUT
-  if( cmbFromCl) print_sprng(   cmb_random_streamT);
-  if( cmbFromCl) print_sprng(   cmb_random_streamP);
-  if(  is_noise) print_sprng( noise_random_streamT);
-  if(  is_noise) print_sprng( noise_random_streamP);
-#endif
+// #if TESTOUT
+//   if( cmbFromCl) print_sprng(   cmb_random_streamT);
+//   if( cmbFromCl) print_sprng(   cmb_random_streamP);
+//   if(  is_noise) print_sprng( noise_random_streamT);
+//   if(  is_noise) print_sprng( noise_random_streamP);
+// #endif
 
   /* generate CMB map from input-Cl */
-  if( cmbFromCl) {
-    if( gangrank == gangroot) printf( " - Create Sky signal\n");
+//   if( cmbFromCl) {
+//     if( gangrank == gangroot) printf( " - Create Sky signal\n");
 
-    /* and read the power spectrum */
-    inputPS = (double *) calloc( 6*(nlmaxSim+1), sizeof(double));
-    inputT  = &inputPS[0*(nlmaxSim+1)];
-    inputG  = &inputPS[1*(nlmaxSim+1)];
-    inputC  = &inputPS[2*(nlmaxSim+1)];
-    inputTG = &inputPS[3*(nlmaxSim+1)];
-    inputTC = &inputPS[4*(nlmaxSim+1)];  
-    inputGC = &inputPS[5*(nlmaxSim+1)];
+//     /* and read the power spectrum */
+//     inputPS = (double *) calloc( 6*(nlmaxSim+1), sizeof(double));
+//     inputT  = &inputPS[0*(nlmaxSim+1)];
+//     inputG  = &inputPS[1*(nlmaxSim+1)];
+//     inputC  = &inputPS[2*(nlmaxSim+1)];
+//     inputTG = &inputPS[3*(nlmaxSim+1)];
+//     inputTC = &inputPS[4*(nlmaxSim+1)];  
+//     inputGC = &inputPS[5*(nlmaxSim+1)];
     
-    if( rank == root) {
-      /* read polarization pixwin */
-      pixwin = (double *) malloc( 2*(nlmaxSim+1)*sizeof(double));
-      sprintf( pixfile, "%s/pixel_window_n%04d.fits", healpixdatadir, nside);
-      read_fits_vect( pixfile, &pixwin[(nlmaxSim+1)*0], nlmaxSim+1, 1, 1);
-      read_fits_vect( pixfile, &pixwin[(nlmaxSim+1)*1], nlmaxSim+1, 2, 1);
-      pixwin[0] = pixwin[1] = pixwin[nlmaxSim+1] = pixwin[nlmaxSim+2] = 1.;
-/*       printf( "pix=%e\n", pixwin[10]); */
+//     if( rank == root) {
+//       /* read polarization pixwin */
+//       pixwin = (double *) malloc( 2*(nlmaxSim+1)*sizeof(double));
+//       sprintf( pixfile, "%s/pixel_window_n%04d.fits", healpixdatadir, nside);
+//       read_fits_vect( pixfile, &pixwin[(nlmaxSim+1)*0], nlmaxSim+1, 1, 1);
+//       read_fits_vect( pixfile, &pixwin[(nlmaxSim+1)*1], nlmaxSim+1, 2, 1);
+//       pixwin[0] = pixwin[1] = pixwin[nlmaxSim+1] = pixwin[nlmaxSim+2] = 1.;
+// /*       printf( "pix=%e\n", pixwin[10]); */
 
-      /* read input beam transfer function */
-      inputBl = (double *) malloc( (nlmaxSim+1)*sizeof(double));
-      read_fits_vect( inpBellfile, inputBl, nlmaxSim+1, 1, 1);
-/*       printf( "Bl=%e\n", inputBl[10]); */
+//       /* read input beam transfer function */
+//       inputBl = (double *) malloc( (nlmaxSim+1)*sizeof(double));
+//       read_fits_vect( inpBellfile, inputBl, nlmaxSim+1, 1, 1);
+// /*       printf( "Bl=%e\n", inputBl[10]); */
       
-      /* reads input spectra */
-      printf( "\tRead Temperature Spectra\n");
-      printf( "\t\t%s\n", inpCellfile);
-      for( i=0; i<6; i++) read_fits_vect( inpCellfile, &inputPS[i*(nlmaxSim+1)], nlmaxSim+1, i+1, 0);
-/*       printf( "TT=%e, EE=%e, BB=%e, TE=%e, TB=%e, EB=%e\n", inputT[10], inputG[10], inputC[10], inputTG[10], inputTC[10], inputGC[10]); */
-      for( l=0; l<=nlmaxSim; l++) {
-	inputT[l]  *= inputBl[l]*inputBl[l]*pixwin[l]*pixwin[l];
-	inputG[l]  *= inputBl[l]*inputBl[l]*pixwin[(nlmaxSim+1)+l]*pixwin[(nlmaxSim+1)+l];
-	inputC[l]  *= inputBl[l]*inputBl[l]*pixwin[(nlmaxSim+1)+l]*pixwin[(nlmaxSim+1)+l];
-	inputTG[l] *= inputBl[l]*inputBl[l]*pixwin[l]*pixwin[(nlmaxSim+1)+l];
-	inputTC[l] *= inputBl[l]*inputBl[l]*pixwin[l]*pixwin[(nlmaxSim+1)+l];
-	inputGC[l] *= inputBl[l]*inputBl[l]*pixwin[(nlmaxSim+1)+l]*pixwin[(nlmaxSim+1)+l];
-      }
+//       /* reads input spectra */
+//       printf( "\tRead Temperature Spectra\n");
+//       printf( "\t\t%s\n", inpCellfile);
+//       for( i=0; i<6; i++) read_fits_vect( inpCellfile, &inputPS[i*(nlmaxSim+1)], nlmaxSim+1, i+1, 0);
+// /*       printf( "TT=%e, EE=%e, BB=%e, TE=%e, TB=%e, EB=%e\n", inputT[10], inputG[10], inputC[10], inputTG[10], inputTC[10], inputGC[10]); */
+//       for( l=0; l<=nlmaxSim; l++) {
+// 	inputT[l]  *= inputBl[l]*inputBl[l]*pixwin[l]*pixwin[l];
+// 	inputG[l]  *= inputBl[l]*inputBl[l]*pixwin[(nlmaxSim+1)+l]*pixwin[(nlmaxSim+1)+l];
+// 	inputC[l]  *= inputBl[l]*inputBl[l]*pixwin[(nlmaxSim+1)+l]*pixwin[(nlmaxSim+1)+l];
+// 	inputTG[l] *= inputBl[l]*inputBl[l]*pixwin[l]*pixwin[(nlmaxSim+1)+l];
+// 	inputTC[l] *= inputBl[l]*inputBl[l]*pixwin[l]*pixwin[(nlmaxSim+1)+l];
+// 	inputGC[l] *= inputBl[l]*inputBl[l]*pixwin[(nlmaxSim+1)+l]*pixwin[(nlmaxSim+1)+l];
+//       }
       
-      free( inputBl);
-      free( pixwin);
-    }
+//       free( inputBl);
+//       free( pixwin);
+//     }
     
-    MPI_Barrier( MPI_COMM_WORLD);
-    if( gangrank == gangroot) printf("\triri\n");
+//     MPI_Barrier( MPI_COMM_WORLD);
+//     if( gangrank == gangroot) printf("\triri\n");
 
-    /* broadcast input cls */
-    MPI_Bcast( inputPS, 6*(nlmaxSim+1), MPI_DOUBLE, root, MPI_COMM_WORLD);
+//     /* broadcast input cls */
+//     MPI_Bcast( inputPS, 6*(nlmaxSim+1), MPI_DOUBLE, root, MPI_COMM_WORLD);
 
-    /* Generate random sky */
-    if( gangrank == gangroot) printf("\tGenerate Random Alm's for Temperature\n");
-    local_simu_almT = (s2hat_dcomplex *) calloc( (nlmaxSim+1)*nmvalsSim*ncomp, sizeof( s2hat_dcomplex));
-    get_random_alms( cmb_random_streamT, nlmaxSim, inputT, ncomp, nmvalsSim, mvalsSim, local_simu_almT);
-    local_simu_almT = (s2hat_dcomplex *) realloc( local_simu_almT, (nlmaxSim+1)*nmvalsSim*sizeof( s2hat_dcomplex));
+//     /* Generate random sky */
+//     if( gangrank == gangroot) printf("\tGenerate Random Alm's for Temperature\n");
+//     local_simu_almT = (s2hat_dcomplex *) calloc( (nlmaxSim+1)*nmvalsSim*ncomp, sizeof( s2hat_dcomplex));
+//     get_random_alms( cmb_random_streamT, nlmaxSim, inputT, ncomp, nmvalsSim, mvalsSim, local_simu_almT);
+//     local_simu_almT = (s2hat_dcomplex *) realloc( local_simu_almT, (nlmaxSim+1)*nmvalsSim*sizeof( s2hat_dcomplex));
 
-    if( gangrank == gangroot) printf("\tGenerate Random Alm's for Polarization\n");
-    local_simu_almP = (s2hat_dcomplex *) calloc( (nlmaxSim+1)*nmvalsSim*ncomp, sizeof( s2hat_dcomplex));
-    get_random_alms( cmb_random_streamP, nlmaxSim, &inputPS[(nlmaxSim+1)], ncomp, nmvalsSim, mvalsSim, local_simu_almP);
+//     if( gangrank == gangroot) printf("\tGenerate Random Alm's for Polarization\n");
+//     local_simu_almP = (s2hat_dcomplex *) calloc( (nlmaxSim+1)*nmvalsSim*ncomp, sizeof( s2hat_dcomplex));
+//     get_random_alms( cmb_random_streamP, nlmaxSim, &inputPS[(nlmaxSim+1)], ncomp, nmvalsSim, mvalsSim, local_simu_almP);
 
-    /* Create TE correlations*/
-    if( gangrank == gangroot) printf("\tGenerate Random Alm's for TE, TB and EB correlations\n");
-    for( l=2; l<nlmaxSim+1; l++) {
-      /*Compute Cholesky coefficients*/
-      aTE = aEE = 0.;
-      aTB = aEB = aBB = 0.;
+//     /* Create TE correlations*/
+//     if( gangrank == gangroot) printf("\tGenerate Random Alm's for TE, TB and EB correlations\n");
+//     for( l=2; l<nlmaxSim+1; l++) {
+//       /*Compute Cholesky coefficients*/
+//       aTE = aEE = 0.;
+//       aTB = aEB = aBB = 0.;
       
-      if( inputT[l] > 0.) {
-	aTE = inputTG[l]/inputT[l];
-	aTB = inputTC[l]/inputT[l];
-      }
-      if( inputG[l] > 0.) {
-	aEE = sqrt(inputG[l]-inputTG[l]*inputTG[l]/inputT[l])/sqrt(inputG[l]);
-	aEB = (inputGC[l]-aTE*aTB*inputT[l])/inputG[l]/aEE;
-      }
-      if( inputC[l] > 0.) {
-	aBB = sqrt(inputC[l]-aTB*aTB*inputT[l]-aEB*aEB*inputG[l])/sqrt(inputC[l]);
-      }
+//       if( inputT[l] > 0.) {
+// 	aTE = inputTG[l]/inputT[l];
+// 	aTB = inputTC[l]/inputT[l];
+//       }
+//       if( inputG[l] > 0.) {
+// 	aEE = sqrt(inputG[l]-inputTG[l]*inputTG[l]/inputT[l])/sqrt(inputG[l]);
+// 	aEB = (inputGC[l]-aTE*aTB*inputT[l])/inputG[l]/aEE;
+//       }
+//       if( inputC[l] > 0.) {
+// 	aBB = sqrt(inputC[l]-aTB*aTB*inputT[l]-aEB*aEB*inputG[l])/sqrt(inputC[l]);
+//       }
       
-      /*Check consistency*/
-      if( (inputG[l]*inputT[l]-inputTG[l]*inputTG[l]) < 0.0) {
-	printf("\t\t Incoherent TT, EE and TE spectra: Coefficient G->E is not defined!!!\n");
-	exit( -1);
-      }
-      //if( (inputGC[l]*inputT[l]-inputTG[l]*inputTC[l]) < 0.0) {
-      //printf("\t\t Incoherent TT, TE, TB and EB spectra: Coefficient G->B is not defined!!!\n");
-      //exit( -1);
-      //}
-      if( (inputC[l]-aTB*aTB*inputT[l]-aEB*aEB*inputG[l]) < 0.0) {
-	printf("\t\t Incoherent TT, EE, BB, TE, TB and EB spectra: Coefficient C->B is not defined!!!\n");
-        exit( -1);
-      }
+//       /*Check consistency*/
+//       if( (inputG[l]*inputT[l]-inputTG[l]*inputTG[l]) < 0.0) {
+// 	printf("\t\t Incoherent TT, EE and TE spectra: Coefficient G->E is not defined!!!\n");
+// 	exit( -1);
+//       }
+//       //if( (inputGC[l]*inputT[l]-inputTG[l]*inputTC[l]) < 0.0) {
+//       //printf("\t\t Incoherent TT, TE, TB and EB spectra: Coefficient G->B is not defined!!!\n");
+//       //exit( -1);
+//       //}
+//       if( (inputC[l]-aTB*aTB*inputT[l]-aEB*aEB*inputG[l]) < 0.0) {
+// 	printf("\t\t Incoherent TT, EE, BB, TE, TB and EB spectra: Coefficient C->B is not defined!!!\n");
+//         exit( -1);
+//       }
 
-      for( m=0; m<nmvalsSim; m++) {	
-	/*create TB/EB correlations*/
-	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].re *= aBB;
-	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].re += aEB*local_simu_almP[ m*(nlmaxSim+1)+l].re;
-	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].re += aTB*local_simu_almT[ m*(nlmaxSim+1)+l].re;
+//       for( m=0; m<nmvalsSim; m++) {	
+// 	/*create TB/EB correlations*/
+// 	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].re *= aBB;
+// 	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].re += aEB*local_simu_almP[ m*(nlmaxSim+1)+l].re;
+// 	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].re += aTB*local_simu_almT[ m*(nlmaxSim+1)+l].re;
 	
-	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].im *= aBB;
-	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].im += aEB*local_simu_almP[ m*(nlmaxSim+1)+l].im;
-	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].im += aTB*local_simu_almT[ m*(nlmaxSim+1)+l].im;
+// 	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].im *= aBB;
+// 	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].im += aEB*local_simu_almP[ m*(nlmaxSim+1)+l].im;
+// 	local_simu_almP[ nmvalsSim*(nlmaxSim+1)+m*(nlmaxSim+1)+l].im += aTB*local_simu_almT[ m*(nlmaxSim+1)+l].im;
 	
-	/*create TE correlations*/
-	local_simu_almP[ m*(nlmaxSim+1)+l].re *= aEE;
-	local_simu_almP[ m*(nlmaxSim+1)+l].re += aTE*local_simu_almT[ m*(nlmaxSim+1)+l].re;
+// 	/*create TE correlations*/
+// 	local_simu_almP[ m*(nlmaxSim+1)+l].re *= aEE;
+// 	local_simu_almP[ m*(nlmaxSim+1)+l].re += aTE*local_simu_almT[ m*(nlmaxSim+1)+l].re;
 	
-	local_simu_almP[ m*(nlmaxSim+1)+l].im *= aEE;
-	local_simu_almP[ m*(nlmaxSim+1)+l].im += aTE*local_simu_almT[ m*(nlmaxSim+1)+l].im;
+// 	local_simu_almP[ m*(nlmaxSim+1)+l].im *= aEE;
+// 	local_simu_almP[ m*(nlmaxSim+1)+l].im += aTE*local_simu_almT[ m*(nlmaxSim+1)+l].im;
 	
-      }
-    }
+//       }
+//     }
 
-    /* free input spectra */
-    free( inputPS);
+//     /* free input spectra */
+//     free( inputPS);
 
 
-#if TESTOUT
-    /* write generated spectra */
-    double *xclSim;
-    xclSim = (double *) malloc( ncomp*ncomp*(nlmaxSim+1)*ncomp*sizeof(double));
+// #if TESTOUT
+//     /* write generated spectra */
+//     double *xclSim;
+//     xclSim = (double *) malloc( ncomp*ncomp*(nlmaxSim+1)*ncomp*sizeof(double));
 
-    collect_xls( 1, 0, 1, 0, ncomp, nlmaxSim, nmvalsSim, mvalsSim, nlmaxSim,
-		 local_simu_almT, local_simu_almT, ncomp, xclSim, gangrank, gangsize, root, gang_comm);
-    if( gangrank == root) sprintf( cmd, "testcl_Temp%d.fits", rank);
-    if( gangrank == root) write_fits_vect( ncomp*(nlmaxSim+1),  xclSim, cmd, 1);
+//     collect_xls( 1, 0, 1, 0, ncomp, nlmaxSim, nmvalsSim, mvalsSim, nlmaxSim,
+// 		 local_simu_almT, local_simu_almT, ncomp, xclSim, gangrank, gangsize, root, gang_comm);
+//     if( gangrank == root) sprintf( cmd, "testcl_Temp%d.fits", rank);
+//     if( gangrank == root) write_fits_vect( ncomp*(nlmaxSim+1),  xclSim, cmd, 1);
     
-    collect_xls( 1, 0, 1, 0, ncomp, nlmaxSim, nmvalsSim, mvalsSim, nlmaxSim,
-		 local_simu_almP, local_simu_almP, ncomp*ncomp, xclSim, gangrank, gangsize, root, gang_comm);
-    if( gangrank == root) sprintf( cmd, "testcl_Pol%d.fits", rank);
-    if( gangrank == root) write_fits_vect( ncomp*ncomp*(nlmaxSim+1),  xclSim, cmd, 1);
+//     collect_xls( 1, 0, 1, 0, ncomp, nlmaxSim, nmvalsSim, mvalsSim, nlmaxSim,
+// 		 local_simu_almP, local_simu_almP, ncomp*ncomp, xclSim, gangrank, gangsize, root, gang_comm);
+//     if( gangrank == root) sprintf( cmd, "testcl_Pol%d.fits", rank);
+//     if( gangrank == root) write_fits_vect( ncomp*ncomp*(nlmaxSim+1),  xclSim, cmd, 1);
 
-    collect_xls( 1, 0, 1, 0, ncomp, nlmaxSim, nmvalsSim, mvalsSim, nlmaxSim,
-                 local_simu_almT, local_simu_almP, ncomp*ncomp, xclSim, gangrank, gangsize, root, gang_comm);
-    if( gangrank == root) sprintf( cmd, "testcl_TempXPol%d.fits", rank);
-    if( gangrank == root) write_fits_vect( ncomp*ncomp*(nlmaxSim+1),  xclSim, cmd, 1);
+//     collect_xls( 1, 0, 1, 0, ncomp, nlmaxSim, nmvalsSim, mvalsSim, nlmaxSim,
+//                  local_simu_almT, local_simu_almP, ncomp*ncomp, xclSim, gangrank, gangsize, root, gang_comm);
+//     if( gangrank == root) sprintf( cmd, "testcl_TempXPol%d.fits", rank);
+//     if( gangrank == root) write_fits_vect( ncomp*ncomp*(nlmaxSim+1),  xclSim, cmd, 1);
 
-    free( xclSim);
-#endif
-    MPI_Barrier( MPI_COMM_WORLD);
+//     free( xclSim);
+// #endif
+//     MPI_Barrier( MPI_COMM_WORLD);
 
 
-    /* Generate CMB map */
-    if( gangrank == gangroot) printf("\tGenerate input CMB map...");
+//     /* Generate CMB map */
+//     if( gangrank == gangroot) printf("\tGenerate input CMB map...");
 
-    if( gangrank == gangroot) printf("\t(T");
-    s2hat_alm2map( plms, cpixelization, cscan, nlmaxSim, nmmaxSim, nmvalsSim, mvalsSim, ncmbmap, 1, 
-		   first_ring, last_ring, map_size, local_mapT, lda, local_simu_almT, nplm, NULL, 
-		   gangsize, gangrank, gang_comm);
-/*     s2hat_alm2map_spin( cpixelization, cscan, 0, nlmaxSim, nmmaxSim, nmvalsSim, mvalsSim, 1, */
-/* 			first_ring, last_ring, map_size, local_mapT, nlmaxSim, local_simu_almT, */
-/* 			gangsize, gangrank, gang_comm); */
-    free( local_simu_almT);
+//     if( gangrank == gangroot) printf("\t(T");
+//     s2hat_alm2map( plms, cpixelization, cscan, nlmaxSim, nmmaxSim, nmvalsSim, mvalsSim, ncmbmap, 1, 
+// 		   first_ring, last_ring, map_size, local_mapT, lda, local_simu_almT, nplm, NULL, 
+// 		   gangsize, gangrank, gang_comm);
+// /*     s2hat_alm2map_spin( cpixelization, cscan, 0, nlmaxSim, nmmaxSim, nmvalsSim, mvalsSim, 1, */
+// /* 			first_ring, last_ring, map_size, local_mapT, nlmaxSim, local_simu_almT, */
+// /* 			gangsize, gangrank, gang_comm); */
+//     free( local_simu_almT);
     
-    if( gangrank == gangroot) printf(",P)\n");
-    s2hat_alm2map_spin( cpixelization, cscan, 2, nlmaxSim, nmmaxSim, nmvalsSim, mvalsSim, ncmbmap,
-			first_ring, last_ring, map_size, local_mapP, nlmaxSim, local_simu_almP,
-			gangsize, gangrank, gang_comm);
-    free( local_simu_almP);
-    MPI_Barrier( MPI_COMM_WORLD);
+//     if( gangrank == gangroot) printf(",P)\n");
+//     s2hat_alm2map_spin( cpixelization, cscan, 2, nlmaxSim, nmmaxSim, nmvalsSim, mvalsSim, ncmbmap,
+// 			first_ring, last_ring, map_size, local_mapP, nlmaxSim, local_simu_almP,
+// 			gangsize, gangrank, gang_comm);
+//     free( local_simu_almP);
+//     MPI_Barrier( MPI_COMM_WORLD);
 
 
-    /* fill CMB maps to all gangnmaps */
-    if( gangrank == gangroot) printf("\tfill all the maps with the same CMB\n");
-    for( imap=1; imap<gangnmaps; imap++) {
-      for( p=0; p<ncomp*map_size; p++) {
-        local_mapT[      map_size*imap+p] = local_mapT[p];
-        local_mapP[ncomp*map_size*imap+p] = local_mapP[p];
-      }
-    }
+//     /* fill CMB maps to all gangnmaps */
+//     if( gangrank == gangroot) printf("\tfill all the maps with the same CMB\n");
+//     for( imap=1; imap<gangnmaps; imap++) {
+//       for( p=0; p<ncomp*map_size; p++) {
+//         local_mapT[      map_size*imap+p] = local_mapT[p];
+//         local_mapP[ncomp*map_size*imap+p] = local_mapP[p];
+//       }
+//     }
 
-#if TESTOUT
-    collect_write_map( cpixelization, 1, 0, 1, "cmbmapT", first_ring, last_ring, map_size,
-		       &local_mapT[0], gangrank, gangsize, gangroot, gang_comm);
-    collect_write_map( cpixelization, 1, 0, 1, "cmbmapQ", first_ring, last_ring, map_size,
-                       &local_mapP[0], gangrank, gangsize, gangroot, gang_comm);
-    collect_write_map( cpixelization, 1, 0, 1, "cmbmapU", first_ring, last_ring, map_size,
-                       &local_mapP[map_size], gangrank, gangsize, gangroot, gang_comm);
-#endif
+// #if TESTOUT
+//     collect_write_map( cpixelization, 1, 0, 1, "cmbmapT", first_ring, last_ring, map_size,
+// 		       &local_mapT[0], gangrank, gangsize, gangroot, gang_comm);
+//     collect_write_map( cpixelization, 1, 0, 1, "cmbmapQ", first_ring, last_ring, map_size,
+//                        &local_mapP[0], gangrank, gangsize, gangroot, gang_comm);
+//     collect_write_map( cpixelization, 1, 0, 1, "cmbmapU", first_ring, last_ring, map_size,
+//                        &local_mapP[map_size], gangrank, gangsize, gangroot, gang_comm);
+// #endif
 
-    free( mvalsSim);
-  }
+//     free( mvalsSim);
+//   }
   MPI_Barrier( MPI_COMM_WORLD);
 
 
@@ -808,81 +811,81 @@ int main(int argc, char * argv[])
   //-----------------------------------------------------------------------
   // Add white noise
   //-----------------------------------------------------------------------
-  if( is_noise) {
+//   if( is_noise) {
 
-    for( imap=0; imap<gangnmaps; imap++) {
-      if( gangrank == gangroot) printf( " - Add noise at level = [%4.2e,%4.2e] \n", sigmaT[imap], sigmaP[imap]);
-      local_noise = (double *) calloc( ncomp*map_size, sizeof(double));
+//     for( imap=0; imap<gangnmaps; imap++) {
+//       if( gangrank == gangroot) printf( " - Add noise at level = [%4.2e,%4.2e] \n", sigmaT[imap], sigmaP[imap]);
+//       local_noise = (double *) calloc( ncomp*map_size, sizeof(double));
       
-      /* Temperature noise */
-      sprng_gaussran( noise_random_streamT, map_size, local_noise);
+//       /* Temperature noise */
+//       sprng_gaussran( noise_random_streamT, map_size, local_noise);
 
-      /* generate inhomogeneous noise using nhit map */
-      if( is_nhit) {
-	for( p=0; p<map_size; p++) {
-	  if( local_nhitT[p] > 0) {
-	    local_noise[p] /= sqrt(local_nhitT[p]);
-	  } else {
-	    local_noise[p] = 0.0;
-	  }
-	}
-      }
+//       /* generate inhomogeneous noise using nhit map */
+//       if( is_nhit) {
+// 	for( p=0; p<map_size; p++) {
+// 	  if( local_nhitT[p] > 0) {
+// 	    local_noise[p] /= sqrt(local_nhitT[p]);
+// 	  } else {
+// 	    local_noise[p] = 0.0;
+// 	  }
+// 	}
+//       }
 	
-#if TESTOUT
-      /*******************/
-      /* check noise map */
-      /*******************/
-      double av, rms;
-      av = rms = 0.0;
-      for( p=0; p<ncomp*map_size; p++) {
-	av += local_noise[p];
-	rms += local_noise[p]*local_noise[p];
-      }
-      av /= ncomp*map_size;
-      rms /= ncomp*map_size;
-      printf(" av = %.4e : rms = %.4e \n", av, sqrt( rms-av*av));
+// #if TESTOUT
+//       /*******************/
+//       /* check noise map */
+//       /*******************/
+//       double av, rms;
+//       av = rms = 0.0;
+//       for( p=0; p<ncomp*map_size; p++) {
+// 	av += local_noise[p];
+// 	rms += local_noise[p]*local_noise[p];
+//       }
+//       av /= ncomp*map_size;
+//       rms /= ncomp*map_size;
+//       printf(" av = %.4e : rms = %.4e \n", av, sqrt( rms-av*av));
 
-      collect_write_map( cpixelization, 1, 0, ncomp, "noisemap", first_ring, last_ring, map_size,
-			 local_noise, gangrank, gangsize, gangroot, gang_comm);    
-      /*******************/
-#endif
+//       collect_write_map( cpixelization, 1, 0, ncomp, "noisemap", first_ring, last_ring, map_size,
+// 			 local_noise, gangrank, gangsize, gangroot, gang_comm);    
+//       /*******************/
+// #endif
 
-      /* add noise with given level */
-      for( p=0; p<ncomp*map_size; p++) local_mapT[map_size*imap+p] += local_noise[p]*sigmaT[imap];
+//       /* add noise with given level */
+//       for( p=0; p<ncomp*map_size; p++) local_mapT[map_size*imap+p] += local_noise[p]*sigmaT[imap];
 
 
-      /* Polarization noise */
-      sprng_gaussran( noise_random_streamP, ncomp*map_size, local_noise);
+//       /* Polarization noise */
+//       sprng_gaussran( noise_random_streamP, ncomp*map_size, local_noise);
 
-      /* generate inhomogeneous noise using nhit map */
-      if( is_nhit) {
-	for( p=0; p<map_size; p++) {
-	  if( local_nhitP[p] > 0) {
-	    local_noise[p+0*map_size] /= sqrt(local_nhitP[p]);
-	    local_noise[p+1*map_size] /= sqrt(local_nhitP[p]);
-	  } else {
-	    local_noise[p+1*map_size] = local_noise[p+0*map_size] = 0.0;
-	  }
-	}
-      }
+//       /* generate inhomogeneous noise using nhit map */
+//       if( is_nhit) {
+// 	for( p=0; p<map_size; p++) {
+// 	  if( local_nhitP[p] > 0) {
+// 	    local_noise[p+0*map_size] /= sqrt(local_nhitP[p]);
+// 	    local_noise[p+1*map_size] /= sqrt(local_nhitP[p]);
+// 	  } else {
+// 	    local_noise[p+1*map_size] = local_noise[p+0*map_size] = 0.0;
+// 	  }
+// 	}
+//       }
 
-      /* add noise with given level */
-      for( p=0; p<ncomp*map_size; p++) local_mapP[ncomp*map_size*imap+p] += local_noise[p]*sigmaP[imap];
+//       /* add noise with given level */
+//       for( p=0; p<ncomp*map_size; p++) local_mapP[ncomp*map_size*imap+p] += local_noise[p]*sigmaP[imap];
 
-      /* free noise map */
-      free( local_noise);
+//       /* free noise map */
+//       free( local_noise);
 
-    } /* end loop on nmaps */
+//     } /* end loop on nmaps */
  
-    if( is_nhit) free( local_nhitT);
-    if( is_nhit) free( local_nhitP);
-  }
+//     if( is_nhit) free( local_nhitT);
+//     if( is_nhit) free( local_nhitP);
+//   }
   free( sigmaT);
   free( sigmaP );
-  if( cmbFromCl) free_sprng(   cmb_random_streamT);
-  if( cmbFromCl) free_sprng(   cmb_random_streamP);
-  if(  is_noise) free_sprng( noise_random_streamT);
-  if(  is_noise) free_sprng( noise_random_streamP);
+  // if( cmbFromCl) free_sprng(   cmb_random_streamT);
+  // if( cmbFromCl) free_sprng(   cmb_random_streamP);
+  // if(  is_noise) free_sprng( noise_random_streamT);
+  // if(  is_noise) free_sprng( noise_random_streamP);
 
 #if TESTOUT
   for( imap=0; imap<nmaps; imap++) {
@@ -1870,109 +1873,109 @@ void read_fits_puremll( char *infile, int nele, double *mll)
 
 //=========================================================================
 
-int get_random_alms( int *stream, int lmax, double *cl, int noStokes, int nmvals, int *mvals, s2hat_dcomplex *alms)
-/* noStokes must be equal to 2 ! *
- * cl contains first EE (lmax+1 - numbers) and then BB (lmax+1 - numbers) */
-{
-  double *revect, *imvect;
-  int i, is, j, l, lmax1, mindx, m, mstart, nlm;
+// int get_random_alms( int *stream, int lmax, double *cl, int noStokes, int nmvals, int *mvals, s2hat_dcomplex *alms)
+// /* noStokes must be equal to 2 ! *
+//  * cl contains first EE (lmax+1 - numbers) and then BB (lmax+1 - numbers) */
+// {
+//   double *revect, *imvect;
+//   int i, is, j, l, lmax1, mindx, m, mstart, nlm;
 
-  lmax1 = lmax + 1;
+//   lmax1 = lmax + 1;
 
-  nlm = lmax1*nmvals;
+//   nlm = lmax1*nmvals;
 
-  revect = (double *)calloc( nlm*noStokes, sizeof( double));
-  sprng_gaussran( stream, nlm*noStokes, revect);
+//   revect = (double *)calloc( nlm*noStokes, sizeof( double));
+//   sprng_gaussran( stream, nlm*noStokes, revect);
 
-  imvect = (double *)calloc( nlm*noStokes, sizeof( double));
-  sprng_gaussran( stream, nlm*noStokes, imvect);
+//   imvect = (double *)calloc( nlm*noStokes, sizeof( double));
+//   sprng_gaussran( stream, nlm*noStokes, imvect);
 
-  mstart = (mvals[0] == 0) ? 1 : 0;
+//   mstart = (mvals[0] == 0) ? 1 : 0;
 
 
-  /* do all the l,m modes now including m = 0 cases */
+//   /* do all the l,m modes now including m = 0 cases */
 
-  i = 4*noStokes;
+//   i = 4*noStokes;
 
-  if( mstart == 0)
-    {
-      for( i = 4*noStokes, l = 2; l < lmax1; l++, i += 4*noStokes)   // leave room for l = 0, 1 modes
-        {
+//   if( mstart == 0)
+//     {
+//       for( i = 4*noStokes, l = 2; l < lmax1; l++, i += 4*noStokes)   // leave room for l = 0, 1 modes
+//         {
 
-	  for( is = 0; is < noStokes; is++)
-	    {
-              alms[ is*nlm + l].re = sqrt(cl[is*lmax1+l])*revect[i++];    // real
-              alms[ is*nlm + l].im = 0.0;                                 // imaginary
-	    }
-        }
-    }
+// 	  for( is = 0; is < noStokes; is++)
+// 	    {
+//               alms[ is*nlm + l].re = sqrt(cl[is*lmax1+l])*revect[i++];    // real
+//               alms[ is*nlm + l].im = 0.0;                                 // imaginary
+// 	    }
+//         }
+//     }
 
-  for( mindx = mstart, l = 2; l < lmax1; l++, i += 4*noStokes, mindx = mstart)   // leave room for l = 0, 1 modes
-    {
+//   for( mindx = mstart, l = 2; l < lmax1; l++, i += 4*noStokes, mindx = mstart)   // leave room for l = 0, 1 modes
+//     {
 
-      for( mindx = mindx; (mindx < nmvals) && (mvals[ mindx] <= l); mindx++)
-        {
+//       for( mindx = mindx; (mindx < nmvals) && (mvals[ mindx] <= l); mindx++)
+//         {
 	  
-	  for( is = 0; is < noStokes; is++)
-	    {
-	      alms[ is*nlm + mindx*lmax1 + l].re = sqrt( 0.5*cl[is*lmax1+l])*revect[i];      // real
-	      alms[ is*nlm + mindx*lmax1 + l].im = sqrt( 0.5*cl[is*lmax1+l])*imvect[i++];    // imaginary
-	    }
-        }
+// 	  for( is = 0; is < noStokes; is++)
+// 	    {
+// 	      alms[ is*nlm + mindx*lmax1 + l].re = sqrt( 0.5*cl[is*lmax1+l])*revect[i];      // real
+// 	      alms[ is*nlm + mindx*lmax1 + l].im = sqrt( 0.5*cl[is*lmax1+l])*imvect[i++];    // imaginary
+// 	    }
+//         }
 
-    }
+//     }
 
-  free( revect);
-  free( imvect);
+//   free( revect);
+//   free( imvect);
 
-}
+// }
 
 
 
-void sprng_gaussran( int *stream, int nvect, double *rvect)
+// void sprng_gaussran( int *stream, int nvect, double *rvect)
 
-{
-  double fac, rsq, v1, v2, tvect[2];
-  int i;
+// {
+//   double fac, rsq, v1, v2, tvect[2];
+//   int i;
 
-  for( i=0; i< nvect/2; i++) {
+//   for( i=0; i< nvect/2; i++) {
 
-    do
-    {
-       tvect[0] = sprng( stream);
-       tvect[1] = sprng( stream);
+//     do
+//     {
+//        tvect[0] = sprng( stream);
+//        tvect[1] = sprng( stream);
 
-       v1 = 2.0*tvect[0] - 1.0;
-       v2 = 2.0*tvect[1] - 1.0;
-       rsq = v1*v1 + v2*v2;
-    } while (rsq >= 1.0 || rsq == 0.0);
+//        v1 = 2.0*tvect[0] - 1.0;
+//        v2 = 2.0*tvect[1] - 1.0;
+//        rsq = v1*v1 + v2*v2;
+//     } while (rsq >= 1.0 || rsq == 0.0);
 
-    fac = sqrt(-2.0*log(rsq)/rsq);
+//     fac = sqrt(-2.0*log(rsq)/rsq);
 
-    rvect[ 2*i]=v1*fac;
-    rvect[ 2*i+1]=v2*fac;
-  }
+//     rvect[ 2*i]=v1*fac;
+//     rvect[ 2*i+1]=v2*fac;
+//   }
 
-  if( nvect%2)
-  {
+//   if( nvect%2)
+//   {
 
-    do
-    {
-       tvect[0] = sprng( stream);
-       tvect[1] = sprng( stream);
+//     do
+//     {
+//        tvect[0] = sprng( stream);
+//        tvect[1] = sprng( stream);
 
-       v1 = 2.0*tvect[0] - 1.0;
-       v2 = 2.0*tvect[1] - 1.0;
-       rsq = v1*v1 + v2*v2;
-    }
-    while( rsq>=1.0 || rsq==0.0);
+//        v1 = 2.0*tvect[0] - 1.0;
+//        v2 = 2.0*tvect[1] - 1.0;
+//        rsq = v1*v1 + v2*v2;
+//     }
+//     while( rsq>=1.0 || rsq==0.0);
 
-    fac=sqrt( -2.0*log(rsq)/rsq);
+//     fac=sqrt( -2.0*log(rsq)/rsq);
 
-    rvect[nvect-1]=v1*fac;
-  }
+//     rvect[nvect-1]=v1*fac;
+//   }
 
-}
+// }
 
 void apply_maskTT( int nmaps, int map_size,
                  double *local_map, double *local_mask, double *local_apodizedmap)
